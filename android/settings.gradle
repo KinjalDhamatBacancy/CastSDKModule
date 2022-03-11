@@ -1,0 +1,12 @@
+//package android
+
+rootProject.name = 'cast_sdk'
+//include ':foo'
+
+//project(':cast_sdk').projectDir = file('android')
+//project(':foo').projectDir = file('android/foo')
+
+
+include ':Connect-SDK-Android'
+
+project(':Connect-SDK-Android').projectDir = file('Connect-SDK-Android')
