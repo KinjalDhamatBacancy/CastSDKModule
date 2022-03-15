@@ -20,6 +20,8 @@ public class LogPrint {
             logFileId = date;
         }
 
+        Log.e("Tag", " ===> " + text);
+
         File log = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath()
                 + "/Log");
 
@@ -50,7 +52,7 @@ public class LogPrint {
             buf.append(date + "===> " + text);
             buf.newLine();
             buf.close();
-            Log.e("Tag", " ===> " + text);
+
         } catch (IOException e) {
             Log.e("appendLog", e.getMessage());
             e.printStackTrace();
