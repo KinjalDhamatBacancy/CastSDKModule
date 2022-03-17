@@ -1,16 +1,23 @@
 package com.example.cast_sdk;
 
-import android.app.Activity;
-
-import com.connectsdk.discovery.DiscoveryManager;
-import com.connectsdk.service.DIALService;
-
+import static com.connectsdk.ConstantKt.backwardAction;
 import static com.connectsdk.ConstantKt.checkVideoCapacityAction;
+import static com.connectsdk.ConstantKt.closeAction;
+import static com.connectsdk.ConstantKt.forwardAction;
 import static com.connectsdk.ConstantKt.loadVideoAction;
 import static com.connectsdk.ConstantKt.methodChannelName;
+import static com.connectsdk.ConstantKt.onConnectListener;
+import static com.connectsdk.ConstantKt.onDisConnectListener;
+import static com.connectsdk.ConstantKt.onDurationListener;
+import static com.connectsdk.ConstantKt.onFailedListener;
 import static com.connectsdk.ConstantKt.onLogListener;
+import static com.connectsdk.ConstantKt.onPositionUpdateListener;
+import static com.connectsdk.ConstantKt.onVideoPlayCompleted;
+import static com.connectsdk.ConstantKt.onVideoPlayFailed;
+import static com.connectsdk.ConstantKt.onVideoPlaySuccess;
 import static com.connectsdk.ConstantKt.pauseAction;
 import static com.connectsdk.ConstantKt.playAction;
+import static com.connectsdk.ConstantKt.seekAction;
 import static com.connectsdk.ConstantKt.startConnectAction;
 import static com.connectsdk.ConstantKt.startDiscoverAction;
 import static com.connectsdk.ConstantKt.stopAction;
@@ -54,8 +61,8 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
 
     private MethodChannel channel;
     private Activity activity;
-    private String URL_VIDEO_MP4 =
-            "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/genesis/video-genesis-l07-ch6-ch7.mp4";
+    private String URL_VIDEO_MP4 = "";
+    //            "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/genesis/video-genesis-l07-ch6-ch7.mp4";
     private String URL_IMAGE_ICON = "http://connectsdk.com/ConnectSDK_Logo.jpg";
 
 
@@ -75,6 +82,8 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
     Timer refreshTimer;
     Boolean isPlaying = false;
     long totalTimeDuration = 0;
+    long currentTimeDuration = 0;
+
     int REFRESH_INTERVAL_MS = (int) TimeUnit.SECONDS.toMillis(1);
 
     void setUpMethodChannel(FlutterPlugin.FlutterPluginBinding flutterPluginBinding) {
@@ -126,11 +135,12 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
             }
 
             case loadVideoAction: {
-                playVideo();
+                playVideo((String) call.arguments);
                 break;
             }
             case playAction: {
                 onPlay();
+                break;
             }
 
 
@@ -142,17 +152,24 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
                 onStop();
                 break;
             }
-//            closeAction -> {
-//                onClose();
-//            }
-//
-//            fastForwardAction -> {
-//                onFastForward();
-//            }
-//
-//            seekAction -> {
-//                onSeekBarMoved(call.arguments);
-//            }
+            case closeAction: {
+                onClose();
+                break;
+            }
+
+            case forwardAction: {
+                forward();
+                break;
+            }
+            case backwardAction: {
+                backward();
+                break;
+            }
+
+            case seekAction: {
+                onSeek((double) call.arguments);
+                break;
+            }
             default: {
 
             }
@@ -188,7 +205,7 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
             }
         });
 
-        pairingAlertDialog = new AlertDialog.Builder(activity , AlertDialog.THEME_DEVICE_DEFAULT_LIGHT)
+        pairingAlertDialog = new AlertDialog.Builder(activity, AlertDialog.THEME_DEVICE_DEFAULT_LIGHT)
                 .setTitle("Pairing with TV")
                 .setMessage("Please confirm the connection on your TV")
                 .setPositiveButton("Okay", null)
@@ -292,7 +309,7 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
     };
 
     public void hConnectToggle() {
-        printLog("hConnectToggle call  ");
+        printLog("Connect Disconnect call  ");
 
         if (!activity.isFinishing()) {
             if (mTV != null) {
@@ -301,7 +318,7 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
 
                 mTV.removeListener(deviceListener);
                 mTV = null;
-
+                channel.invokeMethod(onDisConnectListener, "");
             } else {
                 dialog.show();
             }
@@ -310,6 +327,7 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
 
     void registerSuccess(ConnectableDevice device) {
         printLog("successful register");
+        channel.invokeMethod(onConnectListener, device.getFriendlyName());
 
     }
 
@@ -322,6 +340,7 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
             mTV.disconnect();
             mTV = null;
         }
+        channel.invokeMethod(onFailedListener, "Connection Failed");
     }
 
     void connectEnded(ConnectableDevice device) {
@@ -331,54 +350,50 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
         if (pairingCodeDialog.isShowing()) {
             pairingCodeDialog.dismiss();
         }
+        channel.invokeMethod(onDisConnectListener, "");
+
     }
 
-    private void playVideo() {
-        printLog("playVideo call");
-
-//        Toast.makeText(getActivity(), "video click", Toast.LENGTH_SHORT).show();
-//        boolean shouldLoop = loopingButton.isChecked();
-
-//        SubtitleInfo.Builder subtitleBuilder = null;
-//        if (subtitlesButton.isChecked()) {
-//            subtitleBuilder = new SubtitleInfo.Builder(
-//                    getTv().hasCapability(MediaPlayer.Subtitle_WebVTT) ? URL_SUBTITLES_WEBVTT :
-//                            URL_SUBTITLE_SRT);
-//            subtitleBuilder.setLabel("English").setLanguage("en");
-//        }
+    private void playVideo(String url) {
+        URL_VIDEO_MP4 = url;
+        printLog("playVideo call " + url);
 
         MediaInfo mediaInfo = new MediaInfo.Builder(URL_VIDEO_MP4, "video/mp4")
-                .setTitle("Connect SDK")
-                .setDescription("One SDK Eight Media Platforms")
-                .setIcon(URL_IMAGE_ICON)
-//                .setSubtitleInfo(subtitleBuilder == null ? null : subtitleBuilder.build())
+                .setTitle("Torah Class")
+//                .setDescription("One SDK Eight Media Platforms")
                 .build();
 
         printLog("playVideo call mtv " + mTV + " cap " + mTV.getCapability(MediaPlayer.class));
-        mTV.getCapability(MediaPlayer.class).playMedia(mediaInfo, false, new MediaPlayer.LaunchListener() {
+        if (mTV != null) {
+            mTV.getCapability(MediaPlayer.class).playMedia(mediaInfo, false, new MediaPlayer.LaunchListener() {
 
-            @Override
-            public void onError(ServiceCommandError error) {
-                printLog("Error playing video " + error);
-                stopMediaSession();
-            }
+                @Override
+                public void onError(ServiceCommandError error) {
+                    printLog("Error playing video " + error);
+                    isPlaying = false;
+                    stopMediaSession();
+                    channel.invokeMethod(onVideoPlayFailed, error.getMessage());
 
-            public void onSuccess(MediaPlayer.MediaLaunchObject object) {
-                printLog("playing video onSuccess ");
+                }
 
-                launchSession = object.launchSession;
-                mMediaControl = object.mediaControl;
-                stopUpdating();
-                enableMedia();
-                isPlaying = true;
-            }
-        });
+                public void onSuccess(MediaPlayer.MediaLaunchObject mediaLaunchObject) {
+                    printLog("playing video onSuccess ");
+
+                    launchSession = mediaLaunchObject.launchSession;
+                    mMediaControl = mediaLaunchObject.mediaControl;
+                    stopUpdating();
+                    enableMedia();
+                    isPlaying = true;
+                    channel.invokeMethod(onVideoPlaySuccess, "");
+                }
+            });
+        }
     }
 
     public void enableMedia() {
         printLog("enableMedia");
 
-        if (mTV.hasCapability(MediaControl.PlayState_Subscribe) && !isPlaying) {
+        if (mTV != null && mTV.hasCapability(MediaControl.PlayState_Subscribe) && !isPlaying) {
             mMediaControl.subscribePlayState(playStateListener);
         } else {
             if (mMediaControl != null) {
@@ -397,7 +412,7 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
         if (launchSession != null) {
             launchSession = null;
             stopUpdating();
-            disableMedia();
+            stopMedia();
         }
     }
 
@@ -444,11 +459,12 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
                 case Playing:
                     startUpdating();
 
-                    if (mMediaControl != null && mTV.hasCapability(MediaControl.Duration)) {
+                    if (mMediaControl != null && mTV !=null && mTV.hasCapability(MediaControl.Duration)) {
                         mMediaControl.getDuration(durationListener);
                     }
                     break;
                 case Finished:
+                    channel.invokeMethod(onVideoPlayCompleted, "");
 
                 default:
                     stopUpdating();
@@ -463,12 +479,13 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
         @Override
         public void onError(ServiceCommandError error) {
             printLog("positionListener error " + error);
-
         }
 
         @Override
         public void onSuccess(Long position) {
             printLog("positionListener position " + position);
+            currentTimeDuration = position;
+            channel.invokeMethod(onPositionUpdateListener, position);
 
         }
     };
@@ -484,8 +501,9 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
         @Override
         public void onSuccess(Long duration) {
             printLog("durationListener success " + duration);
-
             totalTimeDuration = duration;
+            channel.invokeMethod(onDurationListener, duration);
+
         }
     };
 
@@ -500,11 +518,6 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
         refreshTimer = null;
     }
 
-    public void disableMedia() {
-        printLog("disableMedia");
-
-        stopMedia();
-    }
 
     public void stopMedia() {
         totalTimeDuration = -1;
@@ -521,20 +534,16 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
         if (mMediaControl != null) mMediaControl.pause(null);
     }
 
-    private void onFastForward() {
-        printLog("onFastForward");
-        if (mMediaControl != null) mMediaControl.fastForward(null);
-    }
-
     private void onClose() {
+        printLog("onClose");
         if (mTV != null) {
             if (launchSession != null) launchSession.close(null);
             launchSession = null;
             stopMedia();
             stopUpdating();
             isPlaying = false;
+            channel.invokeMethod(onDisConnectListener, "");
         }
-        printLog("onClose");
 
     }
 
@@ -551,38 +560,45 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
                     stopMedia();
                     stopUpdating();
                     isPlaying = false;
+                    channel.invokeMethod(onVideoPlayFailed, "");
                 }
 
                 @Override
                 public void onError(ServiceCommandError error) {
                     printLog("onStop error " + error);
-
                 }
             });
         }
     }
 
-//    private void onSeekBarMoved(args: Any) {
-//        printLog("onSeekBarMoved $args")
-//
-//        if ((args is Double) && mMediaControl != null && mTV?.hasCapability(MediaControl.Seek) == true) {
-//            printLog("onSeekBarMoved start $args")
-//            mMediaControl?.seek(args.toLong(), object : ResponseListener<Any?> {
-//                override fun onSuccess(response: Any?) {
-//                    printLog("Success on Seeking")
-//                    startUpdating()
-//                }
-//
-//                override fun onError(error: ServiceCommandError) {
-//                    printLog("Unable to seek $error")
-//                    startUpdating()
-//                }
-//            })
-//        }
-//    }
+    private void onSeek(double position) {
+        if (mMediaControl != null && mTV.hasCapability(MediaControl.Seek)) {
+            mMediaControl.seek((Double.valueOf(position)).longValue(), new ResponseListener<Object>() {
+                @Override
+                public void onSuccess(Object response) {
+                    printLog("onSeek success");
+                    startUpdating();
+                }
+
+                @Override
+                public void onError(ServiceCommandError error) {
+                    printLog("onSeek failed" + error.getMessage());
+                    startUpdating();
+                }
+            });
+        }
+    }
+
+    private void forward() {
+        onSeek(currentTimeDuration + 1000);
+    }
+
+    private void backward() {
+        onSeek(currentTimeDuration - 1000);
+    }
 
     private void printLog(String s) {
-        Log.d("Tag", "===> $s ");
+        Log.d("Tag", "===> " + s);
         channel.invokeMethod(onLogListener, s);
     }
 }

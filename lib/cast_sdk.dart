@@ -19,7 +19,7 @@ class CastSdk {
     debugPrint("===> handle method ${call.arguments} ${call.method}");
     switch (call.method) {
       case onConnectListener:
-        castListener?.onConnect();
+        castListener?.onConnect(call.arguments);
         break;
       case onDisConnectListener:
         castListener?.onDisconnect();
@@ -37,6 +37,12 @@ class CastSdk {
 
       case onDurationListener:
         castListener?.onDuration(call.arguments.toDouble());
+        break;
+      case onVideoPlayCompleted:
+        castListener?.onVideoPlayCompleted();
+        break;
+      case onVideoPlayFailed:
+        castListener?.onVideoPlayFailed();
         break;
 
       default:
@@ -56,8 +62,8 @@ class CastSdk {
     return await _channel.invokeMethod(checkVideoCapacityAction);
   }
 
-  Future get loadVideo async {
-    return await _channel.invokeMethod(loadVideoAction);
+  Future  loadVideo(String url) async {
+    return await _channel.invokeMethod(loadVideoAction, url);
   }
 
   Future get playVideo async {
@@ -76,8 +82,12 @@ class CastSdk {
     return await _channel.invokeMethod(closeAction);
   }
 
-  Future get fastForwardVideo async {
-    return await _channel.invokeMethod(fastForwardAction);
+  Future get forward async {
+    return await _channel.invokeMethod(forwardAction);
+  }
+
+  Future get backward async {
+    return await _channel.invokeMethod(backwardAction);
   }
 
   Future seekVideo(double position) async {

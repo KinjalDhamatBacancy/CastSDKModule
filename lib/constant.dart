@@ -8,6 +8,8 @@ const onFailedListener = "OnFailedListener";
 const onLogListener = "onLogListener";
 const onDurationListener = "onDurationListener";
 const onPositionUpdateListener = "onPositionUpdateListener";
+const onVideoPlayFailed = "onVideoPlayFailed";
+const onVideoPlayCompleted = "onVideoPlayCompleted";
 
 /* Actions */
 const startDiscoverAction = "startDiscoverAction";
@@ -18,5 +20,6 @@ const playAction = "playAction";
 const pauseAction = "pauseAction";
 const closeAction = "closeAction";
 const stopAction = "stopAction";
-const fastForwardAction = "fastForwardAction";
+const forwardAction = "forwardAction";
+const backwardAction = "backwardAction";
 const seekAction = "seekAction";

@@ -1,5 +1,5 @@
 abstract class CastListener {
-  void onConnect();
+  void onConnect(String? name);
 
   void onFailed(String? error);
 
@@ -10,4 +10,8 @@ abstract class CastListener {
   void onDuration(double? value);
 
   void onPositionUpdate(double? value);
+
+  void onVideoPlayCompleted();
+
+  void onVideoPlayFailed();
 }
