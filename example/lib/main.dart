@@ -17,7 +17,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> implements CastListener {
   String _status = 'connect';
-  String deviceName = 'ddssdds';
+  String deviceName = '';
   double? totalDuration;
   double? position;
 

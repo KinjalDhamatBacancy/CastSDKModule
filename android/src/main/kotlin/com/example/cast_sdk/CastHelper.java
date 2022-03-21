@@ -590,11 +590,11 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
     }
 
     private void forward() {
-        onSeek(currentTimeDuration + 1000);
+        onSeek(currentTimeDuration + 10000);
     }
 
     private void backward() {
-        onSeek(currentTimeDuration - 1000);
+        onSeek(currentTimeDuration - 10000);
     }
 
     private void printLog(String s) {
