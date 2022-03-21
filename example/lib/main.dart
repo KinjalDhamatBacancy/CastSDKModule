@@ -4,6 +4,8 @@ import 'package:cast_sdk/cast_listener.dart';
 import 'package:cast_sdk/cast_sdk.dart';
 import 'package:flutter/material.dart';
 
+import 'progress_bar.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -35,6 +37,14 @@ class _MyAppState extends State<MyApp> implements CastListener {
 
   String selectedVideo =
       "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/genesis/video-genesis-l07-ch6-ch7.mp4";
+
+  final progressNotifier = ValueNotifier<ProgressBarState>(
+    ProgressBarState(
+      current: Duration.zero,
+      buffered: Duration.zero,
+      total: Duration.zero,
+    ),
+  );
 
   @override
   void initState() {
@@ -244,13 +254,14 @@ class _MyAppState extends State<MyApp> implements CastListener {
                 //     )),
               ],
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Text("Position - $position"),
-                Text("Total Duration - $totalDuration"),
-              ],
-            ),
+            progressBar(),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.spaceAround,
+            //   children: [
+            //     Text("Position - $position"),
+            //     Text("Total Duration - $totalDuration"),
+            //   ],
+            // ),
             const Divider(
               color: Colors.grey,
             ),
@@ -282,6 +293,46 @@ class _MyAppState extends State<MyApp> implements CastListener {
         ),
       ),
     );
+  }
+
+  Widget progressBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
+      child: ValueListenableBuilder<ProgressBarState>(
+        valueListenable: progressNotifier,
+        builder: (_, value, __) {
+          return ProgressBar(
+            // key: ValueKey(reCreateProgressBar),
+            timeLabelLocation: TimeLabelLocation.above,
+            timeLabelPadding: 4.0,
+            timeLabelTextStyle: TextStyle(color: Colors.black),
+            thumbGlowRadius: 6.0,
+            thumbRadius: 4,
+            bufferedBarColor: Colors.grey,
+            thumbGlowColor: Colors.grey,
+            baseBarColor: Colors.grey,
+            progressBarColor: Colors.grey,
+            thumbColor: Colors.black,
+            progress: value.current,
+            buffered: value.buffered,
+            total: value.total,
+            onSeek: (duration) {
+              seekCall(duration);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  void seekCall(Duration position) {
+    addLog("Seek ${position.inMilliseconds?.toString()}"  );
+    castSdk?.seekVideo(position.inMilliseconds * 1.0);
+
+    progressNotifier.value = ProgressBarState(
+        current: position,
+        buffered: Duration.zero,
+        total: progressNotifier.value.total);
   }
 
   bool isConnected() => _status == "Disconnect";
@@ -333,6 +384,10 @@ class _MyAppState extends State<MyApp> implements CastListener {
     setState(() {
       totalDuration = value;
     });
+    progressNotifier.value = ProgressBarState(
+        current: progressNotifier.value.current,
+        buffered: Duration.zero,
+        total: Duration(milliseconds: totalDuration?.toInt() ?? 0));
   }
 
   @override
@@ -341,6 +396,10 @@ class _MyAppState extends State<MyApp> implements CastListener {
     setState(() {
       position = value;
     });
+    progressNotifier.value = ProgressBarState(
+        current: Duration(milliseconds: value?.toInt() ?? 0),
+        buffered: Duration.zero,
+        total: progressNotifier.value.total);
   }
 
   @override
