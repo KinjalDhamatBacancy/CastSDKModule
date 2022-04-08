@@ -396,8 +396,11 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
         if (mTV != null && mTV.hasCapability(MediaControl.PlayState_Subscribe) && !isPlaying) {
             mMediaControl.subscribePlayState(playStateListener);
         } else {
-            if (mMediaControl != null) {
+            if (mMediaControl != null && (mTV != null && mTV.hasCapability(MediaControl.Duration))) {
+                printLog("durationListener capable");
                 mMediaControl.getDuration(durationListener);
+            } else {
+                printLog("durationListener not capable");
             }
             startUpdating();
         }
@@ -430,7 +433,10 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
             public void run() {
                 Log.d("LG", "Updating information");
                 if (mMediaControl != null && mTV != null && mTV.hasCapability(MediaControl.Position)) {
+                    printLog("positionListener capable");
                     mMediaControl.getPosition(positionListener);
+                } else {
+                    printLog("positionListener not capable");
                 }
 
                 if (mMediaControl != null
@@ -459,7 +465,7 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
                 case Playing:
                     startUpdating();
 
-                    if (mMediaControl != null && mTV !=null && mTV.hasCapability(MediaControl.Duration)) {
+                    if (mMediaControl != null && mTV != null && mTV.hasCapability(MediaControl.Duration)) {
                         mMediaControl.getDuration(durationListener);
                     }
                     break;
@@ -560,7 +566,7 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
                     stopMedia();
                     stopUpdating();
                     isPlaying = false;
-                    channel.invokeMethod(onVideoPlayFailed, "");
+//                    channel.invokeMethod(onVideoPlayFailed, "");
                 }
 
                 @Override

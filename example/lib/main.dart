@@ -24,19 +24,49 @@ class _MyAppState extends State<MyApp> implements CastListener {
   double? position;
 
   CastSdk? castSdk;
+
   List<String> logList = [];
 
-  String url1 =
-      "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/genesis/video-genesis-l07-ch6-ch7.mp4";
-  String url2 =
-      "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/esther/video-esther-l05-ch3-ch4.mp4";
-  String url3 =
-      "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/daniel/video-daniel-l01-intro.mp4";
-  String url4 =
-      "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/ruth/video-ruth-l08-ch4.mp4";
+  List<double> durationList = [
+    // 5665200,
+    // 5682000,
+    2796000,
+    3050000,
+    3462000
+  ];
 
-  String selectedVideo =
-      "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/genesis/video-genesis-l07-ch6-ch7.mp4";
+  List<String> urlNames = [
+    // "genesis",
+    "esther", "daniel", "ruth"];
+
+  List<String> urlList = [
+    // "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/genesis/video-genesis-l07-ch6-ch7.mp4",
+    "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/esther/video-esther-l05-ch3-ch4.mp4",
+    "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/daniel/video-daniel-l01-intro.mp4",
+    "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/ruth/video-ruth-l08-ch4.mp4"
+  ];
+
+  // String url1 =
+  //     "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/genesis/video-genesis-l07-ch6-ch7.mp4";
+  //
+  // /// 94.42
+  // String url2 =
+  //     "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/esther/video-esther-l05-ch3-ch4.mp4";
+  //
+  // /// 50.31
+  // String url3 =
+  //     "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/daniel/video-daniel-l01-intro.mp4";
+  //
+  // /// 50.50
+  // String url4 =
+  //     "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/ruth/video-ruth-l08-ch4.mp4";
+  //
+  // ///  57.42
+
+  int selectedIndex = 0;
+
+  // String selectedVideo =
+  //     "http://d1fb1b55vzzqwl.cloudfront.net/en-us/torahclass/video/ot/genesis/video-genesis-l07-ch6-ch7.mp4";
 
   final progressNotifier = ValueNotifier<ProgressBarState>(
     ProgressBarState(
@@ -81,6 +111,16 @@ class _MyAppState extends State<MyApp> implements CastListener {
                     child: ElevatedButton(
                       onPressed: () {
                         castSdk?.startConnect;
+
+                        // totalDuration = durationList[selectedIndex];
+                        // progressNotifier.value = ProgressBarState(
+                        //     current: progressNotifier.value.current,
+                        //     buffered: Duration.zero,
+                        //     total: Duration(milliseconds: totalDuration?.toInt() ?? 0));
+
+                        setState(() {
+
+                        });
                       },
                       child: Text(_status),
                     )),
@@ -94,58 +134,63 @@ class _MyAppState extends State<MyApp> implements CastListener {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  InkWell(
-                      onTap: () {
-                        setState(() {
-                          selectedVideo = url1;
-                        });
-                      },
-                      child: Text(
-                        "genesis",
-                        style: TextStyle(
-                            color: selectedVideo == url1
-                                ? Colors.blue
-                                : Colors.grey),
-                      )),
-                  InkWell(
-                      onTap: () {
-                        setState(() {
-                          selectedVideo = url2;
-                        });
-                      },
-                      child: Text(
-                        "esther",
-                        style: TextStyle(
-                            color: selectedVideo == url2
-                                ? Colors.blue
-                                : Colors.grey),
-                      )),
-                  InkWell(
-                      onTap: () {
-                        setState(() {
-                          selectedVideo = url3;
-                        });
-                      },
-                      child: Text(
-                        "daniel",
-                        style: TextStyle(
-                            color: selectedVideo == url3
-                                ? Colors.blue
-                                : Colors.grey),
-                      )),
-                  InkWell(
-                      onTap: () {
-                        setState(() {
-                          selectedVideo = url4;
-                        });
-                      },
-                      child: Text(
-                        "ruth",
-                        style: TextStyle(
-                            color: selectedVideo == url4
-                                ? Colors.blue
-                                : Colors.grey),
-                      )),
+                  ...List.generate(
+                    urlList.length,
+                    (index) => InkWell(
+                        onTap: () {
+                          setState(() {
+                            selectedIndex = index;
+                            // selectedVideo = urlList[selectedIndex];
+                          });
+                        },
+                        child: Text(
+                          urlNames[index],
+                          style: TextStyle(
+                              color: selectedIndex == index
+                                  ? Colors.blue
+                                  : Colors.grey),
+                        )),
+                  ),
+
+                  // InkWell(
+                  //     onTap: () {
+                  //       setState(() {
+                  //         selectedVideo = url2;
+                  //       });
+                  //     },
+                  //     child: Text(
+                  //       "esther",
+                  //       style: TextStyle(
+                  //           color: selectedVideo == url2
+                  //               ? Colors.blue
+                  //               : Colors.grey),
+                  //     )),
+                  // InkWell(
+                  //     onTap: () {
+                  //       setState(() {
+                  //         selectedVideo = url3;
+                  //       });
+                  //     },
+                  //     child: Text(
+                  //       "daniel",
+                  //       style: TextStyle(
+                  //           color: selectedVideo == url3
+                  //               ? Colors.blue
+                  //               : Colors.grey),
+                  //     )),
+                  // InkWell(
+                  //     onTap: () {
+                  //       setState(() {
+                  //         selectedVideo = url4;
+                  //       });
+                  //     },
+                  //     child: Text(
+                  //       "ruth",
+                  //       style: TextStyle(
+                  //           color: selectedVideo == url4
+                  //               ? Colors.blue
+                  //               : Colors.grey),
+                  //     )),
                 ],
               ),
             ),
@@ -159,7 +204,7 @@ class _MyAppState extends State<MyApp> implements CastListener {
                           ? () async {
                               // if (await castSdk?.checkVideoCapacity == true) {
                               //   addLog("video capable");
-                              castSdk?.loadVideo(selectedVideo);
+                              castSdk?.loadVideo(urlList[selectedIndex]);
                               // } else {
                               //   addLog("video not capable");
                               // }
@@ -167,7 +212,7 @@ class _MyAppState extends State<MyApp> implements CastListener {
                           : null,
                       child: const Padding(
                         padding: EdgeInsets.all(8.0),
-                        child: Text("Video"),
+                        child: Text("Cast Video"),
                       ),
                     )),
                 Text(deviceName)
@@ -214,16 +259,16 @@ class _MyAppState extends State<MyApp> implements CastListener {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                SizedBox(
-                    width: 100,
-                    child: ElevatedButton(
-                      onPressed: isConnected()
-                          ? () {
-                              castSdk?.seekVideo(10000);
-                            }
-                          : null,
-                      child: const Text("seek"),
-                    )),
+                // SizedBox(
+                //     width: 100,
+                //     child: ElevatedButton(
+                //       onPressed: isConnected()
+                //           ? () {
+                //               castSdk?.seekVideo(10000);
+                //             }
+                //           : null,
+                //       child: const Text("seek"),
+                //     )),
                 SizedBox(
                     width: 100,
                     child: ElevatedButton(
@@ -326,7 +371,7 @@ class _MyAppState extends State<MyApp> implements CastListener {
   }
 
   void seekCall(Duration position) {
-    addLog("Seek ${position.inMilliseconds?.toString()}"  );
+    addLog("Seek ${position.inMilliseconds?.toString()}");
     castSdk?.seekVideo(position.inMilliseconds * 1.0);
 
     progressNotifier.value = ProgressBarState(
@@ -341,6 +386,12 @@ class _MyAppState extends State<MyApp> implements CastListener {
   void onConnect(String? name) {
     addLog("OnConnect");
 
+    totalDuration = durationList[selectedIndex];
+    progressNotifier.value = ProgressBarState(
+        current: progressNotifier.value.current,
+        buffered: Duration.zero,
+        total: Duration(milliseconds: totalDuration?.toInt() ?? 0));
+
     setState(() {
       deviceName = name ?? "";
       _status = "Disconnect";
@@ -353,6 +404,7 @@ class _MyAppState extends State<MyApp> implements CastListener {
 
     setState(() {
       deviceName = "";
+      totalDuration = 0;
       _status = "Connect";
     });
   }
@@ -381,21 +433,23 @@ class _MyAppState extends State<MyApp> implements CastListener {
   void onDuration(double? value) {
     addLog("onDuration $value");
 
-    setState(() {
-      totalDuration = value;
-    });
-    progressNotifier.value = ProgressBarState(
-        current: progressNotifier.value.current,
-        buffered: Duration.zero,
-        total: Duration(milliseconds: totalDuration?.toInt() ?? 0));
+    // setState(() {
+    //   totalDuration = value;
+    // });
+    // progressNotifier.value = ProgressBarState(
+    //     current: progressNotifier.value.current,
+    //     buffered: Duration.zero,
+    //     total: Duration(milliseconds: totalDuration?.toInt() ?? 0));
   }
 
   @override
   void onPositionUpdate(double? value) {
     addLog("onPositionUpdate $value");
+
     setState(() {
       position = value;
     });
+
     progressNotifier.value = ProgressBarState(
         current: Duration(milliseconds: value?.toInt() ?? 0),
         buffered: Duration.zero,

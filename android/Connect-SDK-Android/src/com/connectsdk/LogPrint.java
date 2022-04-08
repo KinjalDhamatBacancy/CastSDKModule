@@ -20,42 +20,42 @@ public class LogPrint {
             logFileId = date;
         }
 
-        Log.e("Tag", " ===> " + text);
-
-        File log = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath()
-                + "/Log");
-
-        if (!log.exists()) {
-            log.mkdir();
-        }
-
-        File logFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath()
-                + "/Log/Logs_file" + logFileId + ".txt");
-
-
-        if (!logFile.exists()) {
-            try {
-                logFile.createNewFile();
-            } catch (IOException e) {
-                Log.e("appendLog", e.getMessage());
-                e.printStackTrace();
-            }
-        }
-
-        try {
-            //BufferedWriter for performance, true to set append to file flag
-            DateFormat df = new DateFormat();
-            String date = df.format("yyyy-MM-dd hh:mm:ss", new java.util.Date()).toString();
-
-
-            BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
-            buf.append(date + "===> " + text);
-            buf.newLine();
-            buf.close();
-
-        } catch (IOException e) {
-            Log.e("appendLog", e.getMessage());
-            e.printStackTrace();
-        }
+//        Log.e("Tag", " ===> " + text);
+//
+//        File log = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath()
+//                + "/Log");
+//
+//        if (!log.exists()) {
+//            log.mkdir();
+//        }
+//
+//        File logFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath()
+//                + "/Log/Logs_file" + logFileId + ".txt");
+//
+//
+//        if (!logFile.exists()) {
+//            try {
+//                logFile.createNewFile();
+//            } catch (IOException e) {
+//                Log.e("appendLog", e.getMessage());
+//                e.printStackTrace();
+//            }
+//        }
+//
+//        try {
+//            //BufferedWriter for performance, true to set append to file flag
+//            DateFormat df = new DateFormat();
+//            String date = df.format("yyyy-MM-dd hh:mm:ss", new java.util.Date()).toString();
+//
+//
+//            BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
+//            buf.append(date + "===> " + text);
+//            buf.newLine();
+//            buf.close();
+//
+//        } catch (IOException e) {
+//            Log.e("appendLog", e.getMessage());
+//            e.printStackTrace();
+//        }
     }
 }
