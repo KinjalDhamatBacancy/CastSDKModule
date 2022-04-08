@@ -176,6 +176,7 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
         }
     }
 
+
     private void startDiscovery() {
         printLog("Start Discovery");
         setupPicker();
@@ -433,10 +434,22 @@ public class CastHelper implements MethodChannel.MethodCallHandler {
             public void run() {
                 Log.d("LG", "Updating information");
                 if (mMediaControl != null && mTV != null && mTV.hasCapability(MediaControl.Position)) {
-                    printLog("positionListener capable");
+//                    printLog("positionListener capable");
                     mMediaControl.getPosition(positionListener);
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            printLog("positionListener  capable");
+                        }//public void run() {
+                    });
                 } else {
-                    printLog("positionListener not capable");
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            printLog("positionListener not capable");
+                        }//public void run() {
+                    });
+//                    printLog("positionListener not capable");
                 }
 
                 if (mMediaControl != null

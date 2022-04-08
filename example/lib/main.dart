@@ -208,7 +208,13 @@ class _MyAppState extends State<MyApp> implements CastListener {
                               // } else {
                               //   addLog("video not capable");
                               // }
-                            }
+                              totalDuration = durationList[selectedIndex];
+                              progressNotifier.value = ProgressBarState(
+                                  current: progressNotifier.value.current,
+                                  buffered: Duration.zero,
+                                  total: Duration(milliseconds: totalDuration?.toInt() ?? 0));
+
+                      }
                           : null,
                       child: const Padding(
                         padding: EdgeInsets.all(8.0),
