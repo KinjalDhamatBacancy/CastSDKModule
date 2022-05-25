@@ -1,0 +1,13 @@
+
+-dontobfuscate
+-keep class io.flutter.app.** { *; }
+-keep class io.flutter.plugin.**  { *; }
+-keep class io.flutter.util.**  { *; }
+-keep class io.flutter.view.**  { *; }
+-keep class io.flutter.**  { *; }
+-keep class io.flutter.plugins.**  { *; }
+-keep class com.shockwave.** { *; }
+-keep class com.connectsdk.**  { *; }
+-keep class com.amazon.whisperplay.**  { *; }
+-keep class org.apache.http.** { *; }
+-keep class com.google.android.gms.** { *; }

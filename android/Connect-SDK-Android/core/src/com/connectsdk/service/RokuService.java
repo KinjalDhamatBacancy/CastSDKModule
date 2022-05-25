@@ -20,8 +20,11 @@
 
 package com.connectsdk.service;
 
+import android.text.Html;
 import android.text.TextUtils;
 import android.util.Log;
+import android.util.Xml;
+import static com.connectsdk.service.DLNAService.AV_TRANSPORT_URN;
 
 import com.connectsdk.core.AppInfo;
 import com.connectsdk.core.ImageInfo;
@@ -49,24 +52,46 @@ import com.connectsdk.service.config.ServiceConfig;
 import com.connectsdk.service.config.ServiceDescription;
 import com.connectsdk.service.roku.RokuApplicationListParser;
 import com.connectsdk.service.sessions.LaunchSession;
+import com.connectsdk.service.upnp.DLNAMediaInfoParser;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
+import org.xmlpull.v1.XmlPullParser;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 public class RokuService extends DeviceService implements Launcher, MediaPlayer, MediaControl, KeyControl, TextInputControl {
 
@@ -607,14 +632,198 @@ public class RokuService extends DeviceService implements Launcher, MediaPlayer,
         Util.postError(listener, ServiceCommandError.notSupported());
     }
 
+//    @Override
+//    public void getDuration(DurationListener listener) {
+//        Util.postError(listener, ServiceCommandError.notSupported());
+//    }
+//
+//    @Override
+//    public void getPosition(PositionListener listener) {
+//        Util.postError(listener, ServiceCommandError.notSupported());
+//    }
+
     @Override
-    public void getDuration(DurationListener listener) {
-        Util.postError(listener, ServiceCommandError.notSupported());
+    public void getDuration(final DurationListener listener) {
+//        Util.postError(listener, ServiceCommandError.notSupported());
+        getPositionInfo(new DLNAService.PositionInfoListener() {
+
+            @Override
+            public void onGetPositionInfoSuccess(String positionInfoXml) {
+                String strDuration = parseData(positionInfoXml, "TrackDuration");
+
+                String trackMetaData = parseData(positionInfoXml, "TrackMetaData");
+                MediaInfo info = DLNAMediaInfoParser.getMediaInfo(trackMetaData);
+                // Check if duration we get not equals 0 or media is image, otherwise wait 1 second and try again
+                if ((!strDuration.equals("0:00:00")) || (info.getMimeType().contains("image"))) {
+                    long milliTimes = convertStrTimeFormatToLong(strDuration);
+
+                    Util.postSuccess(listener, milliTimes);
+                } else new Timer().schedule(new TimerTask() {
+
+                    @Override
+                    public void run() {
+                        getDuration(listener);
+
+                    }
+                }, 1000);
+
+            }
+
+            @Override
+            public void onGetPositionInfoFailed(ServiceCommandError error) {
+                Util.postError(listener, error);
+            }
+        });
     }
 
     @Override
-    public void getPosition(PositionListener listener) {
-        Util.postError(listener, ServiceCommandError.notSupported());
+    public void getPosition(final PositionListener listener) {
+//        Util.postError(listener, ServiceCommandError.notSupported());
+
+        getPositionInfo(new DLNAService.PositionInfoListener() {
+
+            @Override
+            public void onGetPositionInfoSuccess(String positionInfoXml) {
+                String strDuration = parseData(positionInfoXml, "RelTime");
+
+                long milliTimes = convertStrTimeFormatToLong(strDuration);
+
+                Util.postSuccess(listener, milliTimes);
+            }
+
+            @Override
+            public void onGetPositionInfoFailed(ServiceCommandError error) {
+                Util.postError(listener, error);
+            }
+        });
+    }
+
+    protected String getMessageXml(String serviceURN, String method, String instanceId, Map<String, String> params) {
+        try {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            Document doc = db.newDocument();
+            doc.setXmlStandalone(true);
+            doc.setXmlVersion("1.0");
+
+            Element root = doc.createElement("s:Envelope");
+            Element bodyElement = doc.createElement("s:Body");
+            Element methodElement = doc.createElementNS(serviceURN, "u:" + method);
+            Element instanceElement = doc.createElement("InstanceID");
+
+            root.setAttribute("s:encodingStyle", "http://schemas.xmlsoap.org/soap/encoding/");
+            root.setAttribute("xmlns:s", "http://schemas.xmlsoap.org/soap/envelope/");
+
+            doc.appendChild(root);
+            root.appendChild(bodyElement);
+            bodyElement.appendChild(methodElement);
+            if (instanceId != null) {
+                instanceElement.setTextContent(instanceId);
+                methodElement.appendChild(instanceElement);
+            }
+
+            if (params != null) {
+                for (Map.Entry<String, String> entry : params.entrySet()) {
+                    String key = entry.getKey();
+                    String value = entry.getValue();
+                    Element element = doc.createElement(key);
+                    element.setTextContent(value);
+                    methodElement.appendChild(element);
+                }
+            }
+            return xmlToString(doc, true);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    String xmlToString(Node source, boolean xmlDeclaration) throws TransformerException {
+        DOMSource domSource = new DOMSource(source);
+        StringWriter writer = new StringWriter();
+        StreamResult result = new StreamResult(writer);
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer transformer = tf.newTransformer();
+        if (!xmlDeclaration) {
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+        }
+        transformer.transform(domSource, result);
+        return writer.toString();
+    }
+
+    private void getPositionInfo(final DLNAService.PositionInfoListener listener) {
+        String method = "GetPositionInfo";
+        String instanceId = "0";
+
+        String payload = getMessageXml(AV_TRANSPORT_URN, method, instanceId, null);
+        ResponseListener<Object> responseListener = new ResponseListener<Object>() {
+
+            @Override
+            public void onSuccess(Object response) {
+                if (listener != null) {
+                    listener.onGetPositionInfoSuccess((String)response);
+                }
+            }
+
+            @Override
+            public void onError(ServiceCommandError error) {
+                if (listener != null) {
+                    listener.onGetPositionInfoFailed(error);
+                }
+            }
+        };
+
+        ServiceCommand<ResponseListener<Object>> request = new ServiceCommand<ResponseListener<Object>>(this, method, payload, responseListener);
+        request.send();
+    }
+
+
+    long convertStrTimeFormatToLong(String strTime) {
+        long time = 0;
+        SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
+        try {
+            Date d = df.parse(strTime);
+            Date d2 = df.parse("00:00:00");
+            time = d.getTime() - d2.getTime();
+        } catch (ParseException e) {
+            Log.w(Util.T, "Invalid Time Format: " + strTime);
+        } catch (NullPointerException e) {
+            Log.w(Util.T, "Null time argument");
+        }
+
+        return time;
+    }
+
+    private boolean isXmlEncoded(final String xml) {
+        if (xml == null || xml.length() < 4) {
+            return false;
+        }
+        return xml.trim().substring(0, 4).equals("&lt;");
+    }
+
+    String parseData(String response, String key) {
+        if (isXmlEncoded(response)) {
+            response = Html.fromHtml(response).toString();
+        }
+        XmlPullParser parser = Xml.newPullParser();
+        try {
+            parser.setInput(new StringReader(response));
+            int event;
+            boolean isFound = false;
+            do {
+                event = parser.next();
+                if (event == XmlPullParser.START_TAG) {
+                    String tag = parser.getName();
+                    if (key.equals(tag)) {
+                        isFound = true;
+                    }
+                } else if (event == XmlPullParser.TEXT && isFound) {
+                    return parser.getText();
+                }
+            } while (event != XmlPullParser.END_DOCUMENT);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 
     @Override
@@ -992,6 +1201,8 @@ public class RokuService extends DeviceService implements Launcher, MediaPlayer,
         capabilities.add(Rewind);
         capabilities.add(Play);
         capabilities.add(Pause);
+        capabilities.add(MediaControl.Duration);
+        capabilities.add(MediaControl.Position);
 
         capabilities.add(Send);
         capabilities.add(Send_Delete);
